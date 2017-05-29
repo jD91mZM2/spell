@@ -56,7 +56,7 @@ fn main() {
 
 				let parsed = query.parse();
 				if parsed.is_err() {
-					writeln!(io::stderr(), "Not a valid string").unwrap();
+					writeln!(io::stderr(), "Not a valid number").unwrap();
 					return;
 				}
 
