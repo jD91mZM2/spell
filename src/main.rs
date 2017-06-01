@@ -55,13 +55,18 @@ fn main() {
 				let len = query.len();
 				query.remove(len - 1);
 
-				let parsed = query.parse();
+				let parsed = query.parse::<f32>();
 				if parsed.is_err() {
 					writeln!(io::stderr(), "Not a valid number").unwrap();
 					return;
 				}
+				let parsed = parsed.unwrap();
 
-				min_percent = Some(parsed.unwrap());
+				if parsed < 0.0 || parsed > 100.0 {
+					writeln!(io::stderr(), "Not a valid percentage.").unwrap();
+					return;
+				}
+				min_percent = Some(parsed);
 
 				query = unwrap!(args);
 			} else {
