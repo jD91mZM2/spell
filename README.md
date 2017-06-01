@@ -50,30 +50,3 @@ Download [rust](https://rust-lang.org/) and compile it yourself using
 ```
 cargo build --release
 ```
-
-# Drawbacks and plans
-
-Obviously, this was just a quick test project for now.  
-I might end up updating it to include common spelling mistakes and such.
-
-A major problem with `spell` currently, is the `nessecary` and `necessary` problem.  
-Look at it this way.
-
-As a human, you would think the difference between the two words are 3 characters.
-```
-nessecary
-necessary
-  ^ ^^
-```
-
-However, as a computer, `spell` thinks it's actually 4 character.
-
-```
-nessecary
-necessary
-  ^^^^
-```
-
-It does not handle incorrect ordering orders very well.  
-One of the most simpilest approaches to handle this could be to favor the beginning of words, and assume the first few characters are always correct.  
-That is usually the case, and might filter away stuff like `jessica` that pop up.

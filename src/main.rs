@@ -49,6 +49,7 @@ fn main() {
 			query = unwrap!(args);
 		} else {
 			let query_chars: Vec<_> = query.chars().collect();
+
 			if query_chars.len() >= 3 && query_chars[0] == '-' && query_chars[query_chars.len() - 1] == '%' {
 				query.remove(0);
 				let len = query.len();
@@ -83,6 +84,8 @@ fn main() {
 
 fn search(file: &str, query: String, verbose: bool, min_percent: f32) {
 	let query = query.to_lowercase();
+	let mut query_sort = query.chars().collect::<Vec<_>>();
+	query_sort.sort();
 
 	let file = File::open(file);
 	let file = attempt!(file, "Could not open file");
@@ -93,6 +96,17 @@ fn search(file: &str, query: String, verbose: bool, min_percent: f32) {
 	for line in reader.lines() {
 		let line = attempt!(line, "Could not read line from file");
 		let line = line.to_lowercase();
+		let mut line_sort = line.chars().collect::<Vec<_>>();
+		line_sort.sort();
+
+		// For anagrams.
+		// Decided it wasn't worth doing alternative "algorithms"
+		// because they would generally be pretty messy.
+		if query_sort == line_sort {
+			results.push((101.0, line));
+			continue;
+		}
+
 		let total = max(query.len(), line.len());
 		let mut shared = 0;
 
@@ -133,7 +147,10 @@ fn search(file: &str, query: String, verbose: bool, min_percent: f32) {
 
 	for (percent, line) in results {
 		if verbose {
-			println!("({}% match):\t{}", percent, line);
+			match percent {
+				x if x == 101.0 => println!("(Anagram):\t{}", line),
+				_ => println!("({}% match):\t{}", percent, line),
+			}
 		} else {
 			println!("{}", line);
 		}
