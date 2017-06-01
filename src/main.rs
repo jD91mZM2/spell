@@ -41,7 +41,7 @@ fn main() {
 	let mut query = unwrap!(args);
 	let mut verbose = false;
 
-	let mut min_percent = 70.0;
+	let mut min_percent = None;
 
 	loop {
 		if query == "-v" {
@@ -61,7 +61,7 @@ fn main() {
 					return;
 				}
 
-				min_percent = parsed.unwrap();
+				min_percent = Some(parsed.unwrap());
 
 				query = unwrap!(args);
 			} else {
@@ -82,7 +82,7 @@ fn main() {
 	}
 }
 
-fn search(file: &str, query: String, verbose: bool, min_percent: f32) {
+fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 	let query = query.to_lowercase();
 	let mut query_sort = query.chars().collect::<Vec<_>>();
 	query_sort.sort();
@@ -138,9 +138,7 @@ fn search(file: &str, query: String, verbose: bool, min_percent: f32) {
 
 		let percent = shared as f32 / total as f32 * 100.0;
 
-		if percent >= min_percent {
-			results.push((percent, line));
-		}
+		results.push((percent, line));
 	}
 
 	// Unsure if I should manually sort for performance?
@@ -154,14 +152,32 @@ fn search(file: &str, query: String, verbose: bool, min_percent: f32) {
 		}
 	);
 
-	for (percent, line) in results {
-		if verbose {
-			match percent {
-				x if x == 101.0 => println!("(Anagram):\t{}", line),
-				_ => println!("({}% match):\t{}", percent, line),
+	let mut min = min_percent.unwrap_or(100.0); // Copy
+	loop {
+		let mut found = false;
+
+		for &(percent, ref line) in &results {
+			if percent < min {
+				continue;
 			}
-		} else {
-			println!("{}", line);
+
+			found = true;
+
+			if verbose {
+				match percent {
+					x if x == 101.0 => println!("(Anagram):\t{}", line),
+					_ => println!("({}% match):\t{}", percent, line),
+				}
+			} else {
+				println!("{}", line);
+			}
 		}
+
+		// Don't continue if found or manually modified min_percent
+		if found || min_percent.is_some() {
+			break;
+		}
+
+		min -= 10.0;
 	}
 }
