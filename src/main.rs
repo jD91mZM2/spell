@@ -99,9 +99,18 @@ fn search(file: &str, query: String, verbose: bool, min_percent: f32) {
 		let mut line_sort = line.chars().collect::<Vec<_>>();
 		line_sort.sort();
 
+		if query == line {
+			if verbose {
+				println!("(Exact): {}", query);
+			} else {
+				println!("{}", query);
+			}
+			return;
+		}
+
 		// For anagrams.
 		// Decided it wasn't worth doing alternative "algorithms"
-		// because they would generally be pretty messy.
+		// rather than sorting, because they would generally be pretty messy.
 		if query_sort == line_sort {
 			results.push((101.0, line));
 			continue;
