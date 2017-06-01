@@ -44,6 +44,13 @@ nesselrode
 (71.42857% match):	hallows
 ```
 
+## Installing
+
+Download [rust](https://rust-lang.org/) and compile it yourself using  
+```
+cargo build --release
+```
+
 # Drawbacks and plans
 
 Obviously, this was just a quick test project for now.  
