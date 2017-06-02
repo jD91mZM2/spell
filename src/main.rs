@@ -183,6 +183,9 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 			break;
 		}
 
+		if min <= 0.0 {
+			break;
+		}
 		min -= 10.0;
 	}
 }
