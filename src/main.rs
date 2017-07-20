@@ -2,14 +2,13 @@ use std::cmp::Ordering;
 use std::cmp::max;
 use std::env;
 use std::fs::File;
-use std::io;
-use std::io::{BufRead, BufReader, Write, stderr};
+use std::io::{BufRead, BufReader};
 
 macro_rules! attempt {
 	($try:expr, $error:expr) => {
 		{
 			if let Err(err) = $try {
-				writeln!(io::stderr(), "{} (Details: {})", $error, err).unwrap();
+				eprintln!("{} (Details: {})", $error, err);
 				return;
 			}
 
@@ -23,7 +22,7 @@ macro_rules! unwrap {
 			let next = $iter.next();
 
 			if next.is_none() {
-				writeln!(stderr(), "Usage: spell [-v] [-n%] [query] [file ...]").unwrap();
+				eprintln!("Usage: spell [-v] [-n%] [query] [file ...]");
 				return;
 			}
 
@@ -57,13 +56,13 @@ fn main() {
 
 				let parsed = query.parse::<f32>();
 				if parsed.is_err() {
-					writeln!(io::stderr(), "Not a valid number").unwrap();
+					eprintln!("Not a valid number");
 					return;
 				}
 				let parsed = parsed.unwrap();
 
 				if parsed < 0.0 || parsed > 100.0 {
-					writeln!(io::stderr(), "Not a valid percentage.").unwrap();
+					eprintln!("Not a valid percentage.");
 					return;
 				}
 				min_percent = Some(parsed);
