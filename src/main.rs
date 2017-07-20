@@ -101,8 +101,6 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 	for line in reader.lines() {
 		let line = attempt!(line, "Could not read line from file");
 		let line = line.to_lowercase();
-		let mut line_sort = line.chars().collect::<Vec<_>>();
-		line_sort.sort();
 
 		if query == line {
 			if verbose {
@@ -113,9 +111,10 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 			return;
 		}
 
-		// For anagrams.
-		// Decided it wasn't worth doing alternative "algorithms"
-		// rather than sorting, because they would generally be pretty messy.
+		let mut line_sort = line.chars().collect::<Vec<_>>();
+		line_sort.sort();
+
+		// Anagrams!
 		if query_sort == line_sort {
 			results.push((101.0, line));
 			continue;
@@ -124,8 +123,8 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 		let total = max(query.len(), line.len());
 		let mut shared = 0;
 
-		let mut chars_query = query.chars();
 		{
+			let mut chars_query = query.chars();
 			let mut chars_line = line.chars();
 			loop {
 				let char_query = chars_query.next();
@@ -137,6 +136,23 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 
 				if char_query.unwrap() == char_line.unwrap() {
 					shared += 1;
+				} else {
+					// Search if any of the next characters in chars_line is char_query,
+					// and if so shifts chars_line.
+					// Useful for recognizing missing characters, like "cde" in "code".
+
+					let mut i = 0;
+					let mut clone = chars_line.clone();
+					while let Some(next) = clone.next() {
+						i += 1;
+						if next == char_query.unwrap() {
+							shared += 1;
+							for _ in 0..i {
+								chars_line.next();
+							}
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -146,16 +162,13 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 		results.push((percent, line));
 	}
 
-	// Unsure if I should manually sort for performance?
-	results.sort_by(
-		|&(a, _), &(b, _)| if b == a {
-			Ordering::Equal
-		} else if b > a {
-			Ordering::Greater
-		} else {
-			Ordering::Less
-		}
-	);
+	results.sort_by(|&(a, _), &(b, _)| if b == a {
+		Ordering::Equal
+	} else if b > a {
+		Ordering::Greater
+	} else {
+		Ordering::Less
+	});
 
 	let mut min = min_percent.unwrap_or(100.0); // Copy
 	loop {
