@@ -75,18 +75,18 @@ fn main() {
 	}
 
 	search(
-		args.next().unwrap_or(DEFAULT.to_string()).as_str(),
-		query.clone(),
+		&args.next().unwrap_or_else(|| DEFAULT.to_string()),
+		&query,
 		verbose,
 		min_percent
 	);
 
-	while let Some(file) = args.next() {
-		search(file.as_str(), query.clone(), verbose, min_percent);
+	for file in args {
+		search(&file, &query, verbose, min_percent);
 	}
 }
 
-fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
+fn search(file: &str, query: &str, verbose: bool, min_percent: Option<f32>) {
 	let query = query.to_lowercase();
 	let mut query_sort = query.chars().collect::<Vec<_>>();
 	query_sort.sort();
@@ -161,7 +161,7 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 		results.push((percent, line));
 	}
 
-	results.sort_by(|&(a, _), &(b, _)| if b == a {
+	results.sort_by(|&(a, _), &(b, _)| if (b - a).abs() < std::f32::EPSILON {
 		Ordering::Equal
 	} else if b > a {
 		Ordering::Greater
@@ -169,7 +169,7 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 		Ordering::Less
 	});
 
-	let mut min = min_percent.unwrap_or(100.0); // Copy
+	let mut min = min_percent.unwrap_or(100.0);
 	loop {
 		let mut found = false;
 
@@ -181,6 +181,9 @@ fn search(file: &str, query: String, verbose: bool, min_percent: Option<f32>) {
 			found = true;
 
 			if verbose {
+				// Because 101.0 isn't calculated, it's defined.
+				// So no floating point issue can occur.
+				#[cfg_attr(feature = "cargo-clippy", allow(float_cmp))]
 				match percent {
 					x if x == 101.0 => println!("(Anagram):\t{}", line),
 					_ => println!("({}% match):\t{}", percent, line),
