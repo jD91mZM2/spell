@@ -141,7 +141,7 @@ fn search(file: &str, query: &str, verbose: bool, min_percent: Option<f32>) {
                     // Useful for recognizing missing characters, like "cde" in "code".
 
                     let mut i = 0;
-                    for next in chars_line.by_ref() {
+                    for next in chars_line.clone() {
                         i += 1;
                         if next == char_query.unwrap() {
                             shared += 1;
