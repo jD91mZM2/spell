@@ -1,5 +1,7 @@
+extern crate lcs;
+
+use lcs::LcsTable;
 use std::cmp::Ordering;
-use std::cmp::max;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -22,7 +24,7 @@ macro_rules! unwrap {
             let next = $iter.next();
 
             if next.is_none() {
-                eprintln!("Usage: spell [-v] [-n%] [query] [file ...]");
+                eprintln!("Usage: spell [-a] [-v] [-n%] [query] [file ...]");
                 return;
             }
 
@@ -38,14 +40,18 @@ fn main() {
     args.next();
 
     let mut query = unwrap!(args);
+    let mut all = false;
     let mut verbose = false;
 
     let mut min_percent = None;
 
     loop {
-        if query == "-v" {
-            verbose = true;
+        if query == "-a" {
+            all   = true;
             query = unwrap!(args);
+        } else if query == "-v" {
+            verbose = true;
+            query   = unwrap!(args);
         } else {
             let query_chars: Vec<_> = query.chars().collect();
 
@@ -77,19 +83,18 @@ fn main() {
     search(
         &args.next().unwrap_or_else(|| DEFAULT.to_string()),
         &query,
+        all,
         verbose,
         min_percent
     );
 
     for file in args {
-        search(&file, &query, verbose, min_percent);
+        search(&file, &query, all, verbose, min_percent);
     }
 }
 
-fn search(file: &str, query: &str, verbose: bool, min_percent: Option<f32>) {
+fn search(file: &str, query: &str, all: bool, verbose: bool, min_percent: Option<f32>) {
     let query = query.to_lowercase();
-    let mut query_sort = query.chars().collect::<Vec<_>>();
-    query_sort.sort();
 
     let file = File::open(file);
     let file = attempt!(file, "Could not open file");
@@ -101,67 +106,18 @@ fn search(file: &str, query: &str, verbose: bool, min_percent: Option<f32>) {
         let line = attempt!(line, "Could not read line from file");
         let line = line.to_lowercase();
 
-        if query == line {
-            if verbose {
-                println!("(Exact): {}", query);
-            } else {
-                println!("{}", query);
-            }
-            return;
-        }
+        let query_chars = query.chars().collect::<Vec<_>>();
+        let line_chars = line.chars().collect::<Vec<_>>();
+        let lcs = LcsTable::new(&query_chars, &line_chars);
 
-        let mut line_sort = line.chars().collect::<Vec<_>>();
-        line_sort.sort();
-
-        // Anagrams!
-        if query_sort == line_sort {
-            results.push((101.0, line));
-            continue;
-        }
-
-        let total = max(query.len(), line.len());
-        let mut shared = 0;
-
-        {
-            let mut chars_query = query.chars();
-            let mut chars_line = line.chars();
-            loop {
-                let char_query = chars_query.next();
-                let char_line = chars_line.next();
-
-                if char_query.is_none() || char_line.is_none() {
-                    break;
-                }
-
-                if char_query.unwrap() == char_line.unwrap() {
-                    shared += 1;
-                } else {
-                    // Search if any of the next characters in chars_line is char_query,
-                    // and if so shifts chars_line.
-                    // Useful for recognizing missing characters, like "cde" in "code".
-
-                    let mut i = 0;
-                    for next in chars_line.clone() {
-                        i += 1;
-                        if next == char_query.unwrap() {
-                            shared += 1;
-                            break;
-                        }
-                    }
-                    for _ in 0..i {
-                        chars_line.next();
-                    }
-                }
-            }
-        }
-
-        let percent = shared as f32 / total as f32 * 100.0;
+        let diff = lcs.longest_common_subsequence();
+        let percent = diff.len() as f32 * 100.0 / query.len() as f32;
 
         results.push((percent, line));
     }
 
-    results.sort_by(|&(a, _), &(b, _)| if (b - a).abs() < std::f32::EPSILON {
-        Ordering::Equal
+    results.sort_by(|&(a, ref line_a), &(b, ref line_b)| if (b - a).abs() < std::f32::EPSILON {
+        line_a.len().cmp(&line_b.len())
     } else if b > a {
         Ordering::Greater
     } else {
@@ -170,30 +126,29 @@ fn search(file: &str, query: &str, verbose: bool, min_percent: Option<f32>) {
 
     let mut min = min_percent.unwrap_or(100.0);
     loop {
-        let mut found = false;
+        let mut printed = 0;
 
         for &(percent, ref line) in &results {
             if percent < min {
                 continue;
             }
+            if printed >= 7 && !all {
+                break;
+            }
 
-            found = true;
+            printed += 1;
 
             if verbose {
                 // Because 101.0 isn't calculated, it's defined.
                 // So no floating point issue can occur.
-                #[cfg_attr(feature = "cargo-clippy", allow(float_cmp))]
-                match percent {
-                    x if x == 101.0 => println!("(Anagram):\t{}", line),
-                    _ => println!("({}% match):\t{}", percent, line),
-                }
+                println!("({}% match):\t{}", percent, line);
             } else {
                 println!("{}", line);
             }
         }
 
         // Don't continue if found or manually modified min_percent
-        if found || min_percent.is_some() {
+        if printed != 0 || min_percent.is_some() {
             break;
         }
 

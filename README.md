@@ -10,12 +10,20 @@ Getting tired of having to nail the spelling every time?
 ```
 ./spell hwllo
 hello
+halloo
+hallow
+hellos
+hollow
+howell
+wallop
 ./spell amazin
 amazing
-amazon
-amazon
-amazons
-amazons
+amazingly
+amazonian
+amazonian
+dramatizing
+automatizing
+traumatizing
 ```
 
 Usage: `spell [-v] [-n%] [word] [file ...]`
@@ -24,24 +32,23 @@ More advanced examples:
 
 ```
 ./spell -50% nessecary
-bessemer
-jessica
-jessica's
-secretary
-centenary
-mercenary
+undersecretary
+undersecretary's
 necessary
-secretary
-bessemer's
-nesselrode
+necessarily
+necessary's
+unnecessary
+concessionary
 ./spell -v hallo
-(83.33333% match):	hallow
-(80% match):	gallo
-(80% match):	hall
-(80% match):	hall
-(80% match):	halls
-(80% match):	hello
-(71.42857% match):	hallows
+(100% match):	halloo
+(100% match):	hallow
+(100% match):	halloos
+(100% match):	hallows
+(100% match):	shallot
+(100% match):	shallow
+(100% match):	halloo's
+./spell -a hwllo
+*huge output here*
 ```
 
 ## Installing
@@ -50,3 +57,7 @@ Download [rust](https://rust-lang.org/) and compile it yourself using
 ```
 cargo build --release
 ```
+
+## How does it work?
+
+spell uses [rust-lcs](https://github.com/ucarion/rust-lcs) in order to compare words.
