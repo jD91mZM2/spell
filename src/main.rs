@@ -1,7 +1,7 @@
 extern crate lcs;
 
-use lcs::LcsTable;
-use std::cmp::Ordering;
+use lcs::Lcs;
+use std::cmp::{self, Ordering};
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -108,10 +108,9 @@ fn search(file: &str, query: &str, all: bool, verbose: bool, min_percent: Option
 
         let query_chars = query.chars().collect::<Vec<_>>();
         let line_chars = line.chars().collect::<Vec<_>>();
-        let lcs = LcsTable::new(&query_chars, &line_chars);
+        let lcs = Lcs::new(&query_chars, &line_chars).length();
 
-        let diff = lcs.longest_common_subsequence();
-        let percent = diff.len() as f32 * 100.0 / query.len() as f32;
+        let percent = lcs as f32 * 100.0 / cmp::max(query_chars.len(), line_chars.len()) as f32;
 
         results.push((percent, line));
     }
@@ -139,9 +138,7 @@ fn search(file: &str, query: &str, all: bool, verbose: bool, min_percent: Option
             printed += 1;
 
             if verbose {
-                // Because 101.0 isn't calculated, it's defined.
-                // So no floating point issue can occur.
-                println!("({}% match):\t{}", percent, line);
+                println!("({:.2}% match):\t{}", percent, line);
             } else {
                 println!("{}", line);
             }
